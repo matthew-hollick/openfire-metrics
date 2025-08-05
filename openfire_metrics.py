@@ -133,8 +133,14 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
         log_file = os.path.join(log_path, log_filename)
         
         # Set up logging
-        logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s', filemode='a')
-        logging.info(f'Started logging for endpoint {endpoint}')
+        if output_format == 'ndjson':
+            # For NDJSON, we don't want any non-JSON lines in the file
+            # We'll just open the file for appending without setting up logging
+            pass
+        else:
+            # For JSON format, we can use standard logging
+            logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s', filemode='a')
+            logging.info(f'Started logging for endpoint {endpoint}')
 
     # If endpoint is specified, override URL
     base_url = 'http://localhost:9090/plugins/restapi/v1'
