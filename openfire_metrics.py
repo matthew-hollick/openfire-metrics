@@ -77,6 +77,12 @@ def output_ndjson(data, index_prefix="openfire"):
         click.echo(json.dumps(data, separators=(',', ':')))
 
 
+def get_24h_ago_timestamp():
+    """Get Unix timestamp for 24 hours ago."""
+    from datetime import datetime, timedelta
+    return int((datetime.now() - timedelta(hours=24)).timestamp())
+
+
 
 @click.command()
 @click.option('--url', '-u',
@@ -123,7 +129,10 @@ def output_ndjson(data, index_prefix="openfire"):
 @click.option('--enable-logging', '-l',
               is_flag=True,
               help='Enable logging to file (default: no)')
-def main(url, endpoint, username, password, auth_header, output_format, index_prefix, iterate, incremental, start_time, end_time, log_path, enable_logging):
+@click.option('--insecure',
+              is_flag=True,
+              help='Skip SSL certificate validation')
+def main(url, endpoint, username, password, auth_header, output_format, index_prefix, iterate, incremental, start_time, end_time, log_path, enable_logging, insecure):
     """Connect to Openfire REST API and output data."""
     # Set up logging
     if enable_logging:
@@ -153,13 +162,34 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
             # Add query parameters if provided
             params = []
             
-            # Handle incremental feature
+            # Handle incremental feature with pragmatic approach
             if incremental and enable_logging and not start_time and not end_time:
-                # Get the last timestamp from the existing log file
-                last_timestamp = get_last_timestamp_from_log(log_file)
-                if last_timestamp:
-                    # Add one second to avoid duplicates
-                    start_time = last_timestamp + 1
+                # Check for log files with today's and yesterday's dates
+                from datetime import datetime as dt, timedelta
+                today = dt.now()
+                yesterday = today - timedelta(days=1)
+                
+                # Try to find existing log files
+                log_files_to_check = [
+                    os.path.join(log_path, f"{endpoint}-{today.strftime('%Y-%m-%d')}.{output_format}"),
+                    os.path.join(log_path, f"{endpoint}-{yesterday.strftime('%Y-%m-%d')}.{output_format}")
+                ]
+                
+                found_log_file = None
+                for log_file_path in log_files_to_check:
+                    if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 0:
+                        found_log_file = log_file_path
+                        break
+                
+                if found_log_file:
+                    # Get the last timestamp from the existing log file
+                    last_timestamp = get_last_timestamp_from_log(found_log_file)
+                    if last_timestamp:
+                        # Add one second to avoid duplicates
+                        start_time = last_timestamp + 1
+                else:
+                    # No log file found, pull the last 24 hours of logs
+                    start_time = get_24h_ago_timestamp()
             
             if start_time:
                 params.append(f"startTime={start_time}")
@@ -194,7 +224,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
     # If iterate flag is set and we have a list endpoint, fetch individual items
     if iterate and endpoint in ['users', 'groups', 'chatrooms']:
         try:
-            response = requests.get(url, auth=auth, headers=headers)
+            response = requests.get(url, auth=auth, headers=headers, verify=not insecure)
             response.raise_for_status()
             data = response.json()
             
@@ -223,7 +253,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                     if item_id:
                         item_url = f"{base_url}/{endpoint}/{item_id}"
                         try:
-                            item_response = requests.get(item_url, auth=auth, headers=headers)
+                            item_response = requests.get(item_url, auth=auth, headers=headers, verify=not insecure)
                             item_response.raise_for_status()
                             item_data = item_response.json()
                             
@@ -232,7 +262,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                                 # Try to get occupants count
                                 occupants_url = f"{base_url}/{endpoint}/{item_id}/occupants"
                                 try:
-                                    occupants_response = requests.get(occupants_url, auth=auth, headers=headers)
+                                    occupants_response = requests.get(occupants_url, auth=auth, headers=headers, verify=not insecure)
                                     occupants_response.raise_for_status()
                                     occupants_data = occupants_response.json()
                                     
@@ -244,7 +274,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                                     # If occupants endpoint fails, try participants
                                     try:
                                         participants_url = f"{base_url}/{endpoint}/{item_id}/participants"
-                                        participants_response = requests.get(participants_url, auth=auth, headers=headers)
+                                        participants_response = requests.get(participants_url, auth=auth, headers=headers, verify=not insecure)
                                         participants_response.raise_for_status()
                                         participants_data = participants_response.json()
                                         
@@ -332,7 +362,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
     else:
         # Standard mode - make request
         try:
-            response = requests.get(url, auth=auth, headers=headers)
+            response = requests.get(url, auth=auth, headers=headers, verify=not insecure)
             
             # Output status code if in JSON mode
             if output_format == 'json' and not enable_logging:

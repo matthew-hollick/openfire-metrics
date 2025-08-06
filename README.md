@@ -60,6 +60,12 @@ python openfire_metrics.py --endpoint security-logs --start-time 1754425310 --ou
 
 # Use security-logs with incremental pulling (fetches logs since last timestamp in log file)
 python openfire_metrics.py --endpoint security-logs --incremental --enable-logging --output-format ndjson
+
+# Skip SSL certificate validation (useful for self-signed certificates)
+python openfire_metrics.py --endpoint users --insecure
+
+# Connect to HTTPS endpoint with self-signed certificate
+python openfire_metrics.py --url https://localhost:9091/plugins/restapi/v1/users --auth-header fred --insecure
 ```
 
 ## Environment Variables
@@ -71,6 +77,8 @@ All CLI options can be set using environment variables:
 - `OPENFIRE_PASSWORD` - Password for basic authentication
 - `OPENFIRE_AUTH_HEADER` - Authorization header value
 
+Note: The `--insecure` option does not have an environment variable equivalent as it's a security-sensitive flag that should be explicitly set.
+
 ## Available Endpoints
 
 - `users` - User information (list)
@@ -80,7 +88,7 @@ All CLI options can be set using environment variables:
 - `chatrooms` - Chat room information (includes user count when using iteration)
 - `user-roster` - User roster information
 - `system-properties` - System properties (alias for `system`)
-- `security-logs` - Security audit logs (supports `--start-time` and `--end-time` parameters, and incremental pulling with `--incremental`)
+- `security-logs` - Security audit logs (supports `--start-time` and `--end-time` parameters, and incremental pulling with `--incremental`). When using incremental pulling, the tool checks for log files from today and yesterday; if none are found, it pulls the last 24 hours of logs.
 
 ## Output Formats
 
