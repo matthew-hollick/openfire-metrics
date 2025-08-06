@@ -131,7 +131,7 @@ def get_24h_ago_timestamp():
               help='Enable logging to file (default: no)')
 @click.option('--insecure',
               is_flag=True,
-              help='Skip SSL certificate validation')
+              help='Skip SSL certificate validation (WARNING: This disables security checks and should only be used in trusted environments)')
 def main(url, endpoint, username, password, auth_header, output_format, index_prefix, iterate, incremental, start_time, end_time, log_path, enable_logging, insecure):
     """Connect to Openfire REST API and output data."""
     # Set up logging
