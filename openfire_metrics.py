@@ -13,6 +13,9 @@ import logging
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
 
+# Constants
+OPENFIRE_API_BASE_URL = 'http://localhost:9090/plugins/restapi/v1'
+
 
 def get_auth(username, password, auth_header):
     """Get authentication tuple or header."""
@@ -77,7 +80,7 @@ def output_ndjson(data, index_prefix="openfire"):
 
 @click.command()
 @click.option('--url', '-u',
-              default=lambda: os.environ.get('OPENFIRE_URL', 'http://localhost:9090/plugins/restapi/v1/users'),
+              default=lambda: os.environ.get('OPENFIRE_URL', f'{OPENFIRE_API_BASE_URL}/users'),
               help='REST API endpoint URL')
 @click.option('--endpoint', '-e',
               type=click.Choice([
@@ -143,11 +146,10 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
             logging.info(f'Started logging for endpoint {endpoint}')
 
     # If endpoint is specified, override URL
-    base_url = 'http://localhost:9090/plugins/restapi/v1'
-    if endpoint and url == 'http://localhost:9090/plugins/restapi/v1/users':
+    if endpoint and url == f'{OPENFIRE_API_BASE_URL}/users':
         if endpoint == 'security-logs':
             # Special handling for security-logs endpoint
-            url = f"{base_url}/logs/security"
+            url = f"{OPENFIRE_API_BASE_URL}/logs/security"
             # Add query parameters if provided
             params = []
             
@@ -167,9 +169,9 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                 url += "?" + "&".join(params)
         elif endpoint == 'system-properties':
             # Alias for system
-            url = f"{base_url}/system/properties"
+            url = f"{OPENFIRE_API_BASE_URL}/system/properties"
         else:
-            url = f"{base_url}/{endpoint}"
+            url = f"{OPENFIRE_API_BASE_URL}/{endpoint}"
     elif not endpoint:
         # If no endpoint specified, try to infer from URL
         if '/users' in url:
