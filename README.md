@@ -9,6 +9,8 @@ A Python CLI tool that connects to the Openfire REST API and exports data in NDJ
 - Outputs data in JSON or NDJSON format
 - Environment variable support for all configuration options
 - Predefined endpoints for common Openfire resources
+- Dedicated security audit log tool with time-based filtering
+- Read-only monitoring tools for various Openfire resources
 
 ## Installation
 
@@ -66,6 +68,12 @@ python openfire_metrics.py --endpoint users --insecure
 
 # Connect to HTTPS endpoint with self-signed certificate
 python openfire_metrics.py --url https://localhost:9091/plugins/restapi/v1/users --auth-header fred --insecure
+
+# Use the dedicated security audit log tool
+python security_audit_log_tool.py --since 60 --output-format text
+
+# Use the dedicated security audit log tool with JSON output
+python security_audit_log_tool.py --since 30 --output-format json --username admin --password secret
 ```
 
 ## Environment Variables
@@ -89,6 +97,10 @@ Note: The `--insecure` option does not have an environment variable equivalent a
 - `user-roster` - User roster information
 - `system-properties` - System properties (alias for `system`)
 - `security-logs` - Security audit logs (supports `--start-time` and `--end-time` parameters, and incremental pulling with `--incremental`). When using incremental pulling, the tool checks for log files from today and yesterday; if none are found, it pulls the last 24 hours of logs.
+
+## Dedicated Tools
+
+- `security_audit_log_tool.py` - Standalone tool for fetching security audit logs with a simple `--since` parameter for time-based filtering
 
 ## Output Formats
 
@@ -116,6 +128,18 @@ When using NDJSON format, the output follows the Elasticsearch bulk import forma
 {"index":{"_index":"openfire-metrics"}}
 {"username":"bob","email":"bob@example.com","status":"inactive"}
 ```
+
+## Additional Tools
+
+### Security Audit Log Tool
+
+A dedicated command-line tool (`security_audit_log_tool.py`) is available for fetching security audit logs:
+
+- Supports a simple `--since` parameter to specify how many minutes ago to start fetching logs
+- Automatically sets end time to "now" (0)
+- Supports both JSON and text output formats
+- Follows the same authentication patterns as other tools
+- Read-only monitoring tool
 
 ## API Documentation
 

@@ -11,10 +11,38 @@ import json
 import os
 import logging
 from datetime import datetime
-from requests.auth import HTTPBasicAuth
 
 # Constants
 OPENFIRE_API_BASE_URL = 'http://localhost:9090/plugins/restapi/v1'
+
+# Sensitive keys that should be filtered from output
+SENSITIVE_KEYS = {
+    'xmpp.muc.masterkey',
+    # Add more sensitive keys here as needed
+}
+
+
+def filter_sensitive_data(data):
+    """Filter sensitive data from system properties output."""
+    if isinstance(data, dict):
+        # Check for both 'properties' and 'property' keys
+        properties_key = None
+        if 'properties' in data:
+            properties_key = 'properties'
+        elif 'property' in data:
+            properties_key = 'property'
+        
+        if properties_key:
+            for prop in data[properties_key]:
+                if isinstance(prop, dict) and 'key' in prop and 'value' in prop:
+                    if prop['key'] in SENSITIVE_KEYS:
+                        prop['value'] = '[SECRET]'
+    elif isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict) and 'key' in item and 'value' in item:
+                if item['key'] in SENSITIVE_KEYS:
+                    item['value'] = '[SECRET]'
+    return data
 
 
 def get_auth(username, password, auth_header):
@@ -47,7 +75,7 @@ def get_last_timestamp_from_log(log_file_path):
                     except json.JSONDecodeError:
                         # Skip lines that aren't valid JSON
                         continue
-    except Exception as e:
+    except Exception:
         # If there's any error reading the file, we'll just return None
         # which will cause the tool to fetch all logs
         pass
@@ -90,7 +118,7 @@ def get_24h_ago_timestamp():
               help='REST API endpoint URL')
 @click.option('--endpoint', '-e',
               type=click.Choice([
-                  'users', 'groups', 'sessions', 'system', 'chatrooms', 'user-roster',
+                  'users', 'groups', 'sessions', 'system', 'chatrooms',
                   'system-properties', 'security-logs'
               ]),
               default='users',
@@ -123,6 +151,16 @@ def get_24h_ago_timestamp():
 @click.option('--end-time',
               type=int,
               help='End time for security-logs endpoint (Unix timestamp)')
+@click.option('--chatroom-servicename',
+              default='conference',
+              help='Service name for chatrooms endpoint (default: conference)')
+@click.option('--chatroom-type',
+              type=click.Choice(['all', 'public']),
+              default='all',
+              help='Room type filter for chatrooms endpoint (default: all)')
+@click.option('--chatroom-expand-groups',
+              is_flag=True,
+              help='Expand groups in chatrooms endpoint')
 @click.option('--log-path',
               default='/var/log/openfire-metrics',
               help='Log path for output files (default: /var/log/openfire-metrics)')
@@ -132,7 +170,7 @@ def get_24h_ago_timestamp():
 @click.option('--insecure',
               is_flag=True,
               help='Skip SSL certificate validation (WARNING: This disables security checks and should only be used in trusted environments)')
-def main(url, endpoint, username, password, auth_header, output_format, index_prefix, iterate, incremental, start_time, end_time, log_path, enable_logging, insecure):
+def main(url, endpoint, username, password, auth_header, output_format, index_prefix, iterate, incremental, start_time, end_time, chatroom_servicename, chatroom_type, chatroom_expand_groups, log_path, enable_logging, insecure):
     """Connect to Openfire REST API and output data."""
     # Set up logging
     if enable_logging:
@@ -200,6 +238,21 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
         elif endpoint == 'system-properties':
             # Alias for system
             url = f"{OPENFIRE_API_BASE_URL}/system/properties"
+        elif endpoint == 'system':
+            # Map system endpoint to system properties
+            url = f"{OPENFIRE_API_BASE_URL}/system/properties"
+        elif endpoint == 'chatrooms':
+            # Add query parameters for chatrooms endpoint
+            url = f"{OPENFIRE_API_BASE_URL}/{endpoint}"
+            params = []
+            if chatroom_servicename:
+                params.append(f"servicename={chatroom_servicename}")
+            if chatroom_type:
+                params.append(f"type={chatroom_type}")
+            if chatroom_expand_groups:
+                params.append("expandGroups=true")
+            if params:
+                url += "?" + "&".join(params)
         else:
             url = f"{OPENFIRE_API_BASE_URL}/{endpoint}"
     elif not endpoint:
@@ -251,7 +304,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                     
                     # Fetch individual item if we have an ID
                     if item_id:
-                        item_url = f"{base_url}/{endpoint}/{item_id}"
+                        item_url = f"{OPENFIRE_API_BASE_URL}/{endpoint}/{item_id}"
                         try:
                             item_response = requests.get(item_url, auth=auth, headers=headers, verify=not insecure)
                             item_response.raise_for_status()
@@ -260,7 +313,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                             # For chatrooms, also get user count
                             if endpoint == 'chatrooms' and item_id:
                                 # Try to get occupants count
-                                occupants_url = f"{base_url}/{endpoint}/{item_id}/occupants"
+                                occupants_url = f"{OPENFIRE_API_BASE_URL}/{endpoint}/{item_id}/occupants"
                                 try:
                                     occupants_response = requests.get(occupants_url, auth=auth, headers=headers, verify=not insecure)
                                     occupants_response.raise_for_status()
@@ -273,7 +326,7 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                                 except requests.exceptions.RequestException:
                                     # If occupants endpoint fails, try participants
                                     try:
-                                        participants_url = f"{base_url}/{endpoint}/{item_id}/participants"
+                                        participants_url = f"{OPENFIRE_API_BASE_URL}/{endpoint}/{item_id}/participants"
                                         participants_response = requests.get(participants_url, auth=auth, headers=headers, verify=not insecure)
                                         participants_response.raise_for_status()
                                         participants_data = participants_response.json()
@@ -335,24 +388,12 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
                                         f.write(json.dumps(item, separators=(',', ':')) + '\n')
                                 else:
                                     f.write(json.dumps(item, indent=2) + '\n')
-                            
-                            # Also output to console
-                            if output_format == 'ndjson':
-                                output_ndjson(item, index_prefix)
-                            else:
-                                click.echo(json.dumps(item, indent=2))
+                        
+                        # Also output to console
+                        if output_format == 'ndjson':
+                            output_ndjson(item, index_prefix)
                         else:
-                            # Output to console only
-                            if output_format == 'ndjson':
-                                output_ndjson(item, index_prefix)
-                            else:
-                                click.echo(json.dumps(item, indent=2))
-            else:
-                error_msg = "No list data found in response"
-                if enable_logging:
-                    logging.error(error_msg)
-                click.echo(error_msg)
-                
+                            click.echo(json.dumps(item, indent=2))
         except requests.exceptions.RequestException as e:
             error_msg = f"Error connecting to API: {e}"
             if enable_logging:
@@ -375,6 +416,10 @@ def main(url, endpoint, username, password, auth_header, output_format, index_pr
             # Try to parse and output JSON
             try:
                 json_data = response.json()
+                # Filter sensitive data if this is system endpoint
+                if endpoint in ['system', 'system-properties']:
+                    json_data = filter_sensitive_data(json_data)
+                
                 if output_format == 'json':
                     if enable_logging:
                         with open(log_file, 'a') as f:
