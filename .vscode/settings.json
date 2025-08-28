@@ -1,5 +1,3 @@
 {
-    "ruff.path": [
-        "/home/mjh.linux/.local/share/mise/shims/ruff"
-    ]
+    "ruff.path": ["ruff"]
 }

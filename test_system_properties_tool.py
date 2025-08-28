@@ -5,12 +5,14 @@ Test script for the system properties tool (read-only monitoring).
 import sys
 import os
 
-# Add the parent directory to the path so we can import the openfire_api package
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '.'))
+# Add the repository root (parent directory) to the path so we can import the openfire_api package
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
 
 from openfire_api.system_properties import SystemProperty, SystemProperties, SystemPropertiesAPI
 from openfire_api.client import OpenFireAPIClient
-
+from unittest.mock import Mock
 
 def test_system_property():
     """Test SystemProperty class."""
@@ -43,7 +45,7 @@ def test_system_properties_api():
     sys.stdout.flush()
     
     # Create a mock client
-    client = OpenFireAPIClient("http://localhost:9090/plugins/restapi/v1")
+    client = Mock(spec=OpenFireAPIClient)
     api = SystemPropertiesAPI(client)
     
     # Check that read-only methods exist

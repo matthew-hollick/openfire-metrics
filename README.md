@@ -131,15 +131,31 @@ When using NDJSON format, the output follows the Elasticsearch bulk import forma
 
 ## Additional Tools
 
-### Security Audit Log Tool
+### Dedicated Command-Line Tools
 
-A dedicated command-line tool (`security_audit_log_tool.py`) is available for fetching security audit logs:
+Several dedicated command-line tools are available for fetching specific types of data:
 
-- Supports a simple `--since` parameter to specify how many minutes ago to start fetching logs
-- Automatically sets end time to "now" (0)
-- Supports both JSON and text output formats
-- Follows the same authentication patterns as other tools
-- Read-only monitoring tool
+- `users_tool.py` - Fetch user information
+- `groups_tool.py` - Fetch group information
+- `chatrooms_tool.py` - Fetch chatroom information
+- `sessions_tool.py` - Fetch session information
+- `system_properties_tool.py` - Fetch system properties
+- `security_audit_log_tool.py` - Fetch security audit logs
+
+All tools are built using shared utility modules located in the `tools/openfire_api` directory, which provides common functionality for CLI parsing, HTTP output, and formatting.
+
+All tools support the following common options:
+
+- `--url` - OpenFire REST API URL (default: http://localhost:9090/plugins/restapi/v1)
+- `--auth-header` - Authorization header value (required)
+- `--insecure` - Skip SSL certificate validation
+- `--output-format` - Output format (json, text, or http)
+- `--output-destination` - HTTP endpoint URL for output (required when using http output format)
+- `--http-username` - Username for HTTP basic auth
+- `--http-password` - Password for HTTP basic auth
+- `--http-header` - Custom headers for HTTP requests (format: name:value)
+
+Each tool also supports tool-specific options. For example, the security audit log tool supports a `--since` parameter to specify how many minutes ago to start fetching logs.
 
 ## API Documentation
 

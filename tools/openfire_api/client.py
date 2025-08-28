@@ -1,6 +1,10 @@
 """
 OpenFire API Client
 
+# Copyright 2025 Ignite Realtime Community
+# Licensed under the Apache License, Version 2.0
+# SPDX-License-Identifier: Apache-2.0
+
 This module provides a client for connecting to the OpenFire REST API.
 """
 
