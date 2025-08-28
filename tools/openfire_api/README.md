@@ -22,7 +22,8 @@ limitations under the License.
 
 ## Modules
 
-- `client.py` - OpenFire API client
+### API Modules
+- `client.py` - OpenFire API client with HTTP request methods
 - `users.py` - Users API module
 - `sessions.py` - Sessions API module
 - `chatrooms.py` - Chatrooms API module
@@ -30,8 +31,13 @@ limitations under the License.
 - `system_properties.py` - System Properties API module
 - `security_audit_log.py` - Security Audit Log API module
 - `message_archive.py` - Message Archive API module
-- `base_tool.py` - Base tool class
-- `http_utils.py` - HTTP utilities
-- `cli_utils.py` - CLI utilities
-- `format_utils.py` - Formatting utilities
+
+### Utility Modules
+- `base_tool.py` - Base tool class for CLI tools
+- `http_utils.py` - HTTP utilities with connection pooling and SSL verification
+- `auth_utils.py` - Authentication utilities for consistent auth handling
+- `error_utils.py` - Error handling utilities with custom exceptions
+- `cli_utils.py` - CLI utilities for output options
+- `cli_args.py` - Consolidated CLI argument handling
+- `format_utils.py` - Formatting utilities for JSON and text output
 

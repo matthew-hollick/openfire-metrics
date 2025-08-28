@@ -9,7 +9,9 @@ This module provides a client for connecting to the OpenFire REST API.
 """
 
 import requests
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, Dict
+
+from .http_utils import make_request, get_auth, get_default_headers
 
 
 class OpenFireAPIClient:
@@ -41,19 +43,11 @@ class OpenFireAPIClient:
         
     def _get_auth(self) -> Optional[Tuple[str, str]]:
         """Get authentication tuple for basic auth."""
-        if self.username and self.password:
-            return (self.username, self.password)
-        return None
+        return get_auth(self.username, self.password)
         
-    def _get_headers(self) -> dict:
+    def _get_headers(self) -> Dict[str, str]:
         """Get headers for the request."""
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-        if self.auth_header:
-            headers['Authorization'] = self.auth_header
-        return headers
+        return get_default_headers(self.auth_header)
         
     def get(self, endpoint: str, params: Optional[dict] = None) -> requests.Response:
         """
@@ -70,12 +64,13 @@ class OpenFireAPIClient:
         auth = self._get_auth()
         headers = self._get_headers()
         
-        response = self.session.get(
-            url, 
+        response = make_request(
+            method='GET',
+            url=url, 
             auth=auth, 
             headers=headers, 
             params=params,
-            verify=not self.insecure
+            insecure=self.insecure
         )
         
         return response
@@ -99,12 +94,13 @@ class OpenFireAPIClient:
         if headers:
             default_headers.update(headers)
         
-        response = self.session.post(
-            url,
+        response = make_request(
+            method='POST',
+            url=url,
             auth=auth,
             headers=default_headers,
             data=data,
-            verify=not self.insecure
+            insecure=self.insecure
         )
         
         return response
@@ -128,12 +124,13 @@ class OpenFireAPIClient:
         if headers:
             default_headers.update(headers)
         
-        response = self.session.put(
-            url,
+        response = make_request(
+            method='PUT',
+            url=url,
             auth=auth,
             headers=default_headers,
             data=data,
-            verify=not self.insecure
+            insecure=self.insecure
         )
         
         return response
@@ -152,11 +149,12 @@ class OpenFireAPIClient:
         auth = self._get_auth()
         headers = self._get_headers()
         
-        response = self.session.delete(
-            url,
+        response = make_request(
+            method='DELETE',
+            url=url,
             auth=auth,
             headers=headers,
-            verify=not self.insecure
+            insecure=self.insecure
         )
         
         return response

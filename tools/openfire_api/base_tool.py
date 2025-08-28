@@ -73,8 +73,10 @@ class BaseTool:
                 http_headers = parse_http_headers(self.args.http_header)
             username = self.args.http_username
             password = self.args.http_password
+            # Use the insecure flag to determine SSL verification
+            verify = not self.args.insecure if hasattr(self.args, 'insecure') else True
             send_to_http_endpoint(data, self.args.output_destination, 
-                                username, password, http_headers)
+                                username, password, http_headers, verify=verify)
             print("Data sent to HTTP endpoint successfully")
         else:
             self._output_as_text(data)

@@ -31,7 +31,7 @@ class GroupsTool(BaseTool):
         """Run the groups tool."""
         args = self.parse_args()
         
-        # Create a client
+        # Create a client with auth from auth_utils
         client = create_client(
             url=args.url,
             auth_header=args.auth_header,

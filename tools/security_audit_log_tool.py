@@ -32,7 +32,7 @@ class SecurityAuditLogTool(BaseTool):
         """Run the security audit log tool."""
         args = self.parse_args()
         
-        # Create API client
+        # Create API client with auth from auth_utils
         client = create_client(url=args.url, auth_header=args.auth_header, insecure=args.insecure)
         
         try:
