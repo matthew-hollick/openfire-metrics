@@ -7,7 +7,6 @@ Shared HTTP utilities for OpenFire tools
 # SPDX-License-Identifier: Apache-2.0
 """
 
-import json
 import sys
 import requests
 from typing import Dict, List, Optional, Union
@@ -35,7 +34,6 @@ def send_to_http_endpoint(
     """
     # Prepare headers
     request_headers = {
-        'Content-Type': 'application/json',
         'User-Agent': 'OpenFire-Metrics-Tool/1.0'
     }
     
@@ -49,20 +47,31 @@ def send_to_http_endpoint(
         auth = (username, password)
     
     try:
-        # Convert data to JSON if it's a dict or list
+        # Send POST request with appropriate data parameter
         if isinstance(data, (dict, list)):
-            json_data = json.dumps(data)
+            # For structured data, use json= parameter which automatically sets Content-Type
+            response = requests.post(
+                url,
+                json=data,
+                headers=request_headers,
+                auth=auth,
+                timeout=30
+            )
         else:
-            json_data = data
-        
-        # Send POST request
-        response = requests.post(
-            url,
-            data=json_data,
-            headers=request_headers,
-            auth=auth,
-            timeout=30
-        )
+            # For string data, use data= parameter
+            # Only set Content-Type if explicitly provided in headers
+            if 'Content-Type' not in request_headers and headers:
+                request_headers['Content-Type'] = 'text/plain'
+            elif 'Content-Type' not in request_headers:
+                request_headers['Content-Type'] = 'text/plain'
+            
+            response = requests.post(
+                url,
+                data=data,
+                headers=request_headers,
+                auth=auth,
+                timeout=30
+            )
         
         # Check if request was successful
         response.raise_for_status()
