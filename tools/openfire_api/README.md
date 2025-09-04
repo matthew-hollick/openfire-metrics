@@ -1,6 +1,6 @@
 # OpenFire API Modules
 
-This directory contains Python modules for interacting with the OpenFire REST API. These modules are designed to be used by the command-line tools in the parent directory.
+This directory contains Python modules for interacting with the OpenFire REST API.
 
 ## Licensing
 
@@ -35,4 +35,3 @@ limitations under the License.
 - `cli_utils.py` - CLI utilities
 - `format_utils.py` - Formatting utilities
 
-These modules provide a Python interface to the OpenFire REST API and are used by the command-line tools to retrieve data from an OpenFire server.

@@ -6,10 +6,9 @@ A standalone tool for retrieving user information from OpenFire.
 """
 
 import sys
-import os
+#import os
 
-# Add the parent directory to the path so we can import the openfire_api module
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+#sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from openfire_api.users import UsersAPI
 from openfire_api.sessions import SessionsAPI

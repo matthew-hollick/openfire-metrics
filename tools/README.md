@@ -1,6 +1,6 @@
 # OpenFire Tools
 
-This directory contains standalone command-line tools for interacting with the OpenFire REST API. Each tool can output data in JSON format, as human-readable text, or send it to an HTTP endpoint.
+This directory contains standalone command-line tools to read data from the OpenFire REST API. Each tool can output data in JSON format, as human-readable text, or send it to an HTTP endpoint (eg elastic-agent).
 
 ## Available Tools
 
@@ -58,3 +58,5 @@ python test_http_endpoint.py [OPTIONS]
    ```bash
    python users_tool.py --auth-header "your-secret" --output-format http --output-destination http://localhost:8081
    ```
+
+Love and thanks to the Openfire community for the 

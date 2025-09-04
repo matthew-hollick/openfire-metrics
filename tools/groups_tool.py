@@ -6,10 +6,9 @@ A command-line tool for retrieving and displaying OpenFire group information.
 """
 
 import sys
-import os
+#import os
 
-# Add the parent directory to the path so we can import the openfire_api module
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+#sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from openfire_api.groups import GroupsAPI
 from openfire_api.base_tool import BaseTool
